@@ -1,0 +1,870 @@
+ <?php
+use yii\helpers\Html;
+use yii\widgets\ActiveForm;
+use kartik\date\DatePicker;
+error_reporting(E_ERROR); 
+?>
+<style>
+.company{
+right:47%;
+}
+.info-box-icon{
+border-radius:50px;
+}
+.content{
+	
+	    background-color: #ECF0F5;
+}
+.content-header{
+	
+	    background-color: #ECF0F5 !important;
+}
+.info-box{
+	padding:20px !important;
+	margin:15px !important;
+}
+</style>
+<?php
+	//potential
+	$new_y=$_GET['date'];
+	if($_GET['date'] =="")
+	{
+$datecom=date('Y')-1;
+$a=$datecom+1;
+$b=$datecom;
+ $new_y=$b.'-'.$a;
+	}
+$pot=explode('-',$new_y);
+
+$pot1=$pot[1].'-'.++$pot[1];
+ $pot2=--$pot[0].'-'.++$pot[0];
+$nextyear=$pot1;
+$previousyear=$pot2;
+
+//linkage
+$new_x=$_GET['date1'];
+if($_GET['date1']=="")
+	{
+		$datecom=date('Y')-1;
+$a=$datecom+1;
+$b=$datecom;
+ $new_x=$b.'-'.$a;
+		}
+		$pot=explode('-',$new_x);
+
+$pot1=$pot[1].'-'.++$pot[1];
+ $pot2=--$pot[0].'-'.++$pot[0];
+	 $link_query=$pot[1].'-04-01';
+	
+	$nextyear1=$pot1;
+	
+	$previousyear1=$pot2;
+	
+	?>
+	
+
+<?php
+	$session = Yii::$app->session;
+	$check=$session['auth']['company_id'];
+$paid=array();
+@$paid1=array();
+	if(!isset($check))
+	{
+	 $check=1;
+	}
+	//graph
+	if(!isset($_GET['graph']))
+	{
+$graph_pre=date('Y')-1;
+		$graph_set=$graph_pre.'-'.date('Y');
+		}
+		else{ $graph_set=$_GET['graph'];}
+	
+	$graph_date=$graph_set;
+	$month_sep=explode('-',$graph_date);
+	$month_first=$month_sep[0].'-04-01';
+	$month_second=$month_sep[1].'-03-31';
+	
+	//potential List
+	$potential_date=$new_y;
+	$month_sep1=explode('-',$potential_date);
+	$potential_first=$month_sep1[0].'-04-01';
+	$potential_second=$month_sep1[1].'-03-31';
+	
+	//
+	//linkage
+	$linkagedash_date=$new_x;
+	$month_sep2=explode('-',$linkagedash_date);
+	$linkage_first=$month_sep2[0].'-04-01';
+	$linkage_second=$month_sep2[1].'-03-31';
+	
+	//exit();
+	$month=array('1'=>'-01-','2'=>'-02-','3'=>'-03-','4'=>'-04-','5'=>'-05-','6'=>'-06-','7'=>'-07-','8'=>'-08-','9'=>'-09-','10'=>'-10-','11'=>'-11-','12'=>'-12-');
+		$graph1= app\models\Due::find()->where(['between', 'due_date', $month_first, $month_second ])->andwhere(['company_id'=>$check])->asArray()->all();
+		$graph3= app\models\Group::find()->select('count(loan.group_id) as count,distribute_date,group.group_id')->joinwith('loan')->where('distribute_date<"'.$link_query.'"')->andwhere(['loan.company_id'=>$check])->groupBy(['loan.loan_id'])->asArray()->all();
+		
+		$graph2= app\models\Group::find()->select('count(loan.group_id) as count,distribute_date,group.group_id')->joinwith('loan')->where(['between', 'distribute_date', $linkage_first, $linkage_second ])->andwhere(['loan.company_id'=>$check])->groupBy(['loan.loan_id'])->asArray()->all();
+	
+	$link= app\models\Loan::find()->where(['between', 'distribute_date', $month_first, $month_second ])->andwhere(['company_id'=>$check])->asArray()->all();
+		
+		
+
+			$sql='select * from year_graph where company_id='.$check;
+ $command = Yii::$app->db->createCommand($sql);
+  @$post = @$command->queryall();
+ $profit1=str_replace('@',',',$post[0]['profit']);
+ $collection1=str_replace('@',',',$post[0]['collection']); 
+ $linkage1=str_replace('@',',',$post[0]['linkage']);
+
+
+		//print_r($graph2);
+		//exit();
+		
+		foreach($link as $links)
+		{
+			foreach($month as $car=>$cars)
+			{
+			if(strstr($links['distribute_date'],$cars))
+		{
+			
+				$linkage[$car][]=$links['loan_amount'];
+		}
+				}
+			}
+			
+	//print_r($graph2);
+		foreach($graph2 as $graphs)
+		{
+			
+		foreach($month as $var=>$val)
+	{
+//$overall[$graphs['group_id']][]=$graphs['count'];
+	$val=$datecom1.$val;
+	if(strstr($graphs['distribute_date'],$val))
+		{
+	$all[$graphs['group_id']][]=$graphs['count'];
+			if($graphs['count']==1)
+	{
+ $new[$var][]=1;
+		}
+		else{
+			$old[$var][]=1;
+			}
+		}
+			}
+		}
+		
+		
+			foreach($graph3 as $graphs)
+		{
+			
+		foreach($month as $var=>$val)
+	{
+	if($var==1 || $var==2 || $var==3)
+	{
+		 $join=date('Y',strtotime($linkage_second));
+		
+		}
+		else{
+			$join=date('Y',strtotime($linkage_first));
+			}
+//$overall[$graphs['group_id']][]=$graphs['count'];
+$val=$join.$val;
+
+	if(strstr($graphs['distribute_date'],$val))
+		{
+	//$all[$graphs['group_id']][]=$graphs['count'];
+			if($graphs['count']==1)
+	{
+ $olds[$var][]=1;
+		}
+		else{
+			$oldss[$var][]=1;
+			}
+		}
+			}
+		}
+		
+
+		
+		$potentials= app\models\Due::find()->where(['between', 'due_date', $potential_first, $potential_second])->andwhere(['company_id'=>$check])->asArray()->all();
+		//$potentialsnew= app\models\Group::find()->select('DATE_ADD(formation_date, "INTERVAL 6 MONTH)')->where(['between', 'formation_date', $potential_first, $potential_second])->andwhere(['company_id'=>$check])->asArray()->all();
+	
+		 $potentail1x=date('Y-m-d', strtotime("-6 months", strtotime($potential_first)));
+		 
+		 $potentail2x=date('Y-m-d', strtotime("-6 months", strtotime($potential_second)));
+		  $command = Yii::$app->db->createCommand("SELECT DATE_ADD(formation_date, INTERVAL 6 MONTH) as formation_date FROM `group` WHERE (`formation_date` BETWEEN '".$potentail1x."' AND '".$potentail2x."') AND (`company_id`='2') and count=0");
+ @$potentialsnew = @$command->queryall();
+		foreach($potentials as $graphs)
+		{
+			
+			foreach($month as $var=>$val)
+	{
+	
+	if(strstr($graphs['due_date'],$val))
+		{
+		if($graphs['closing_balance']==0)
+	{
+$date[$var][]=$graphs['due_date'];
+		}
+		}
+			
+		}
+		}
+
+		
+		
+	foreach($potentialsnew as $graphss)
+		{
+			
+			foreach($month as $var=>$val)
+	{
+	
+	if(strstr($graphss['formation_date'],$val))
+		{
+		
+$datepot[$var][]=$graphss['formation_date'];
+		}
+		
+			
+		}
+		}
+	
+	
+	
+		
+		
+foreach($graph1 as $graph)
+{
+	$principal[]=$graph['principal'];
+	$instalment[]=$graph['instalment'];
+	if($graph['paid_amount']!='')
+	{
+		$paid[]=$graph['principal'];
+		
+		}
+
+	
+	foreach($month as $var=>$val)
+	{
+		if(strstr($graph['due_date'],$val))
+		{
+				$principal1[$var][]=round($graph['principal']);
+	$instalment1[$var][]=round($graph['instalment']);
+	if($graph['paid_amount']!='')
+	{
+		$paid1[$var][]=round($graph['instalment']);
+		}
+		else
+		{
+			$paid1[$var][]=0;
+			}
+	 if($graph['processing_fee']!=0)
+	{
+		//$linkage[$var][]=round($graph['opening_balance']);
+		}
+		else{
+			//$linkage[$var][]=0;
+			}
+	if($graph['closing_balance']==0)
+	{
+//$date[$var][]=$graph['due_date'];
+		}
+		
+	
+		$due_date[$var][]=round($graph['due_date']);
+	$processing_fee1[$var][]=round($graph['processing_fee']);
+	$tax1[$var][]=round($graph['tax']);
+			}
+			else{
+				$principal1[$var][]=0;
+				}
+			
+		}	
+}
+
+foreach($month as $var1=>$months)
+{
+	
+	
+$m_principal[]= round(array_sum($principal1[$var1]));
+
+$m_profit[]=round(array_sum($principal1[$var1])/100);
+
+$m_instalment[]=array_sum($instalment1[$var1]);
+
+$m_linkage[]=round(array_sum($linkage[$var1]));
+$m_linkage_profit[]=round(array_sum($linkage[$var1])/100);
+$m_total_comm[]=round(array_sum($linkage[$var1])/100+array_sum($principal1[$var1])/100);
+
+  @$m_paid[]=array_sum(@$paid1[$var1]);
+	
+}
+
+
+
+$first=implode(',',$m_principal);
+$third=implode(',',$m_profit);
+$linkage=implode(',',$m_linkage);
+$linkage_profit=implode(',',$m_linkage_profit);
+$m_total_comm=implode(',',$m_total_comm);
+
+
+//echo number_format(array_sum($principal));
+
+$y_principal=number_format(array_sum($principal)/100);
+
+ $y_instalment=number_format(array_sum($instalment));
+
+$y_paid=number_format(array_sum(@$paid));
+
+
+
+	$customer= app\models\Group::find()->where(['company_id'=>$check])->count();
+	$complete= app\models\Loan::find()->where(['company_id'=>$check])->count(); 
+	$complete= app\models\Loan::find()->where(['company_id'=>$check])->count(); 
+	$exec= app\models\User::find()->where(['company_id'=>$check,'user_role_id'=>'3'])->count();
+	$age= app\models\User::find()->where(['company_id'=>$check,'user_role_id'=>'2'])->count();
+	
+	if($session['auth']['user_role_id']==1)
+	{
+
+?> 
+			  <!-- /. box -->
+			  <div class="col-md-11" style='margin-left:20px;margin-bottom:10px'>
+			 <h2 style='margin-top: 0px !important;'>DashBoard</h2>
+			   <div class="row">
+            <div class="col-lg-3 col-xs-6">
+				
+              <div class="small-box bg-aqua">
+                <div class="inner">
+                  <h3><?php echo number_format($post[0]['y_linkage']);?></h3>
+                  <p>Total Linkages(<?php echo @$complete;?>)</p>
+                </div>
+                <div class="icon">
+                  <i class="fa fa-shopping-cart"></i>
+                </div>
+                <a href="#" class="">
+                  <i class="fa"></i>
+                </a>
+              </div>
+            </div><!-- ./col -->
+            <div class="col-lg-3 col-xs-6">
+              <!-- small box -->
+              <div class="small-box bg-green">
+                <div class="inner">
+                  <h3><?php echo  number_format($post[0]['total_earn']-$post[0]['y_linkage']);?></h3>
+                  <p>Total Principal Collected</p>
+                </div>
+                <div class="icon">
+                  <i class="ion ion-stats-bars"></i>
+                </div>
+                <a href="#" class="">
+                   <i class="fa"></i>
+                </a>
+              </div>
+            </div><!-- ./col -->
+            <div class="col-lg-3 col-xs-6">
+              <!-- small box -->
+              <div class="small-box bg-yellow">
+                <div class="inner">
+				<?php
+				$tops=$post[0]['total_earn']*1/100;
+				
+			$percent=$tops/10;
+				
+				?>
+                  <h3><?php echo number_format($tops-$percent); ?></h3>
+                  <p>Total Commision Received</p>
+                </div>
+                <div class="icon">
+                  <i class="ion ion-person-add"></i>
+                </div>
+                <a href="#" class="">
+                 <i class="fa"></i>
+                </a>
+              </div>
+			  <?php
+			  $outstanding=$percent;
+			  ?>
+            </div><!-- ./col -->
+            <div class="col-lg-3 col-xs-6">
+              <!-- small box -->
+              <div class="small-box bg-red">
+                <div class="inner">
+                  <h3><?php  echo number_format($outstanding); ?></h3>
+                  <p>Outstanding Commision</p>
+                </div>
+                <div class="icon">
+                  <i class="ion ion-pie-graph"></i>
+                </div>
+                <a href="#" class="">
+                 <i class="fa "></i>
+                </a>
+              </div>
+            </div><!-- ./col -->
+          </div><!-- /.row -->
+			  
+		
+			  </div>
+			  
+			 
+			  <?php
+			 
+	}
+?>
+
+<?php
+/*
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<script src="http://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="../chartjs/chart2.js"></script>
+*/
+?>
+<script src="../chartjs/google.js"></script>
+<script src="../chartjs/chart1.js"></script>
+<div id="container1" style="height: 300px ;margin-top:100px;margin-left:25px;margin-right:25px"></div>
+<br><br><br>
+<div id="container" style="height: 280px ;margin-top:10px;margin-left:25px;margin-right:25px"></div>
+<div class="box" style='width:17%!important; margin-top:35px;margin-left:25px;float:left'>
+
+
+	<?php
+	
+	$date1=$_GET['date1'];
+	$datex=$_GET['date'];
+//exit();
+	?>
+                <div class="box-header" id='complete'>
+                  <h3 class="box-title">Group Potentials</h3>
+				  <div class="" style='text-align:center;'>
+                          <button type="button"  class="btn"><a href='index?date=<?php echo $previousyear; ?>&date1=<?php echo $date1; ?>#complete'><<</a></button>
+                          <button type="button" class="btn btn-danger"><?php echo $potential_date; ?></button>
+                          <button type="button" class="btn"><a href='index?date=<?php echo $nextyear; ?>&date1=<?php echo $date1 ?>#complete'>>></a></button>
+                        </div>
+                </div><!-- /.box-header -->
+                <div class="box-body no-padding">
+                  <table class="table table-condensed"style='margin-top:0px !important'>
+                    <tr>
+                    
+                      <th>Month</th>
+                      
+                      <th style="width: 40px">Exist</th>
+					   <th style="width: 40px">New</th>
+					    <th style="width: 40px">Total</th>
+					  
+                    </tr>
+                    
+<?php
+	//print_r($date);
+	//exit();
+	
+	$url= ltrim(date('m'),0);
+	
+	for($i=4;$i<=12;$i++)
+	{
+
+$monthName = date('F', mktime(0, 0, 0, $i, 10)); // March
+$xx=date('Y',strtotime($potential_first));
+if(strlen($i)<2)
+{
+	$u=$xx.'-'.'0'.$i;
+}
+else{
+	$u=$xx.'-'.$i;
+	
+}
+	?><tr>
+                      <td><?php echo $monthName;?></td>
+                      
+                      <td><span class="badge bg-red"><?php echo $pot_tot[]=count(@$date[$i]); ?></span></a></td>
+					   <td><span class="badge bg-red"><?php echo $pot_totp[]=count(@$datepot[$i]); ?></span></a></td>
+                       <td><a href='../loan/index2?month=<?php echo $u;?>'><span style='text-decoration: underline;' class="badge bg-red"><?php echo $pot_totx[]=count(@$date[$i])+count($datepot[$i]); ?></span></a></td>
+					</tr>
+					<?php
+	}
+	for($i=1;$i<=3;$i++)
+	{
+
+$monthName = date('F', mktime(0, 0, 0, $i, 10)); // March
+$yy=date('Y',strtotime($potential_second));
+if(strlen($i)<2)
+{
+	$u=$yy.'-'.'0'.$i;
+}
+else{
+	$u=$yy.'-'.$i;
+	
+}
+	?><tr>
+                      <td><?php echo $monthName;?></td>
+                      
+                      <td><span class="badge bg-red"><?php echo $pot_tot[]=count(@$date[$i]); ?></span></a></td>
+					     <td><span class="badge bg-red"><?php echo $pot_totp[]=count(@$datepot[$i]); ?></span></a></td>
+						     <td><a href='../loan/index2?month=<?php echo $u;?>'><span style='text-decoration: underline;' class="badge bg-red"><?php echo $pot_totx[]=count(@$date[$i])+count($datepot[$i]); ?></span></a></td>
+                    </tr>
+					<?php
+	}
+	?>
+	<tr>
+                      <td><?php echo Total;?></td>
+                      
+                      <td><span class="badge bg-blue"><?php echo array_sum($pot_tot); ?></span></a></td>
+					  <td><span class="badge bg-blue"><?php echo array_sum($pot_totp); ?></span></a></td>
+					  <td><span class="badge bg-blue"><?php echo array_sum($pot_totx); ?></span></a></td>
+                    </tr>
+	<?php
+	?>
+	
+                 </table>
+                </div><!-- /.box-body -->
+              </div>	
+			<div class="box" style='width:17%!important; margin-top:35px;margin-left:25px;float:left'>
+
+	
+                <div class="box-header">
+                  <h3 class="box-title">Linkage Details</h3>
+				  <div class="" style='text-align:center;'>
+                          <button type="button"  class="btn"><a href='index?date1=<?php echo $previousyear1; ?>&date=<?php echo $datex; ?>#complete'><<</a></button>
+                          <button type="button" class="btn btn-danger"><?php echo $new_x; ?></button>
+                          <button type="button" class="btn"><a href='index?date1=<?php echo $nextyear1; ?>&date=<?php echo $datex; ?>#complete'>>></a></button>
+                        </div>
+                </div><!-- /.box-header -->
+                <div class="box-body no-padding">
+                  <table class="table table-condensed"style='margin-top:0px !important'>
+                    <tr>
+                    
+                      <th>Month</th>
+                      
+                      <th style="width: 40px">Old</th>
+					  <th style="width: 40px">New</th>
+					  <th style="width: 40px">Total</th>
+                    </tr>
+                    
+<?php
+	//print_r($date);
+	//exit();
+	
+	$url= ltrim(date('m'),0);
+	
+	for($i=4;$i<=12;$i++)
+	{
+$monthName = date('F', mktime(0, 0, 0, $i, 10)); // March
+if(strlen($i)<2)
+{
+	$potent=date('Y',strtotime($linkage_first));
+	$u=$potent.'-'.'0'.$i;
+}
+else{
+	$u=$potent.'-'.$i;
+	
+}
+	?><tr>
+                      <td><?php echo $monthName;?></td>
+                      <td><span class="badge bg-red"><?php echo $ass1[]=array_sum($new[$i])-array_sum($olds[$i]); ?></span></a></td>
+					  <td><span class="badge bg-red"><?php echo $ass2[]=array_sum($olds[$i]); ?></span></a></td>
+					 <td><a href='../group/index2?month=<?php echo $u;?>&action=link'><span style='text-decoration: underline;' class="badge bg-red"><?php echo $ass[]=array_sum($new[$i]); ?></span></a></td>
+                    </tr>
+					<?php
+	}
+
+	?>
+	<?php
+		for($i=1;$i<=3;$i++)
+	{
+$monthName = date('F', mktime(0, 0, 0, $i, 10)); // March
+if(strlen($i)<2)
+{
+	$potent=date('Y',strtotime($linkage_second));
+	$u=$potent.'-'.'0'.$i;
+}
+else{
+	$u=$potent.'-'.$i;
+	
+}
+	?><tr>
+                      <td><?php echo $monthName;?></td>
+                      <td><span class="badge bg-red"><?php echo $ass1[]=array_sum($new[$i])-array_sum($olds[$i]); ?></span></a></td>
+					  <td><span class="badge bg-red"><?php echo $ass2[]=array_sum($olds[$i]); ?></span></a></td>
+					 <td><a href='../group/index2?month=<?php echo $u;?>&action=link'><span style='text-decoration: underline;' class="badge bg-red"><?php echo $ass[]=array_sum($new[$i]); ?></span></a></td>
+                    </tr>
+					<?php
+	}
+	?>
+	<td><?php echo Total;?></td>
+                      <td><span class="badge bg-blue"><?php echo array_sum($ass1); ?></span></a></td>
+					  <td><span class="badge bg-blue"><?php echo array_sum($ass2); ?></span></a></td>
+					 <td><span class="badge bg-blue"><?php echo array_sum($ass); ?></span></a></td>
+                    </tr>
+	<?php
+	?>
+	
+	
+                 </table>
+                </div><!-- /.box-body -->
+              </div>	
+			
+		 <div class="row" style='margin-top:40px' > 
+            <div class="col-md-3 col-sm-6 col-xs-12">
+              <div class="info-box">
+                <span class="info-box-icon bg-aqua"><i class="fa fa-user"></i></span>
+                <div class="info-box-content">
+                  <h4><a href='../client/index'><span class="info-box-text">Groups</span></a></h4>
+                  <span class="info-box-number"><?php echo @$customer;?></span>
+                </div><!-- /.info-box-content -->
+              </div><!-- /.info-box -->
+            </div><!-- /.col -->
+            <div class="col-md-3 col-sm-6 col-xs-12">
+              <div class="info-box">
+                <span class="info-box-icon bg-green"><i class="fa fa-files-o"></i></span>
+                <div class="info-box-content">
+                  <h4><a href='../enquiry/complete'><span class="info-box-text">Total Loan</span></a> </h4>
+                  <span class="info-box-number"><?php echo @$complete;?></span>
+                </div><!-- /.info-box-content -->
+              </div><!-- /.info-box -->
+            </div><!-- /.col -->
+			<?php
+			$sql="SELECT count(loan.loan_id) as count FROM `group` LEFT JOIN `village` ON `group`.`village_id` = `village`.`village_id` LEFT JOIN `loan` ON `group`.`group_id` = `loan`.`group_id` LEFT JOIN `due` ON `loan`.`loan_id` = `due`.`loan_id` WHERE (due.due_date<CURDATE() and closing_balance=0) AND (`flag`=0) ORDER BY `group_name`";
+			$command = Yii::$app->db->createCommand($sql);
+  @$completed = @$command->queryall();
+			?>
+			
+			<div class="col-md-3 col-sm-6 col-xs-12">
+              <div class="info-box">
+                <span class="info-box-icon bg-green"><i class="fa fa-files-o"></i></span>
+                <div class="info-box-content">
+                  <h4><a href='../group/completed'><span class="info-box-text">Loan Completed Groups</span></a> </h4>
+                  <span class="info-box-number"><?php echo @$completed[0]['count'];?></span>
+                </div><!-- /.info-box-content -->
+              </div><!-- /.info-box -->
+            </div><!-- /.col -->
+			<div class="col-md-3 col-sm-6 col-xs-12">
+              <div class="info-box">
+                <span class="info-box-icon bg-green"><i class="fa fa-files-o"></i></span>
+                <div class="info-box-content">
+                  <h4><a href='../enquiry/complete'><span class="info-box-text">Total Loan</span></a> </h4>
+                  <span class="info-box-number"><?php echo @$complete;?></span>
+                </div><!-- /.info-box-content -->
+              </div><!-- /.info-box -->
+            </div><!-- /.col -->
+			<div class="col-md-3 col-sm-6 col-xs-12">
+              <div class="info-box">
+                <span class="info-box-icon bg-green"><i class="fa fa-files-o"></i></span>
+                <div class="info-box-content">
+                  <h4><a href='../enquiry/complete'><span class="info-box-text">Total Loan</span></a> </h4>
+                  <span class="info-box-number"><?php echo @$complete;?></span>
+                </div><!-- /.info-box-content -->
+              </div><!-- /.info-box -->
+            </div><!-- /.col -->
+			<div class="col-md-3 col-sm-6 col-xs-12">
+              <div class="info-box">
+                <span class="info-box-icon bg-green"><i class="fa fa-files-o"></i></span>
+                <div class="info-box-content">
+                  <h4><a href='../enquiry/complete'><span class="info-box-text">Total Loan</span></a> </h4>
+                  <span class="info-box-number"><?php echo @$complete;?></span>
+                </div><!-- /.info-box-content -->
+              </div><!-- /.info-box -->
+            </div><!-- /.col -->
+          
+		
+            </div><!-- /.col -->
+			
+
+
+
+		<?php
+		
+		
+	$linkage=str_replace("[,","[0,",$linkage);
+	$linkage=str_replace(",,",",0,",$linkage);
+	
+	
+	
+	$month_arr=array($first,$second,$linkage,$linkage_profit,$m_total_comm);
+	
+	foreach($month_arr as $month_seps)
+	{
+	$month_seps=explode(',',$month_seps);
+
+	for($i=1;$i<=3;$i++)
+	{
+		$x=array_shift($month_seps);
+		$month_seps[]=$x;
+		}
+	 $month_seps= implode(',',$month_seps);
+	
+$month_form_array[]=$month_seps;
+}
+
+		?>
+	
+		  
+<script>
+
+var chart;
+
+$(function () {
+  var chart = new Highcharts.Chart({
+                colors: ["#ca2c92", "skyblue",'#00a86b','lightgreen','red'],
+                chart: {
+                    type: 'column',
+                    renderTo: 'container'
+                },
+        title: {
+            text: 'Monthly Growth Rate (<?php echo $graph_date;?>)'
+        },
+        subtitle: {
+           // text: 'Source: <a href="https://en.wikipedia.org/wiki/World_population">Wikipedia.org</a>'
+        },
+        xAxis: {
+            categories: ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'],
+            title: {
+                text: null
+            }
+        },
+        yAxis: {
+            min: 0,
+            title: {
+                text: 'Amount(Millions)',
+                align: 'high'
+            },
+            labels: {
+                overflow: 'justify'
+            }
+        },
+        tooltip: {
+            valueSuffix: ' '
+        },
+        plotOptions: {
+            bar: {
+                dataLabels: {
+                    enabled: true
+                }
+            }
+        },
+        legend: {
+            layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'top',
+            x: -40,
+            y: 80,
+            floating: true,
+            borderWidth: 1,
+            backgroundColor: ((Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'),
+            shadow: true
+        },
+        credits: {
+            enabled: false
+        },
+        series: [{
+           name: 'Collection',
+            data: [<?php echo $month_form_array[0];?>]
+        },
+		
+		{
+           name: 'Linkage',
+            data: [<?php echo $month_form_array[2];?>]
+        },
+		
+		{
+           name: 'Total Commision',
+            data: [<?php echo $month_form_array[4]?>]
+        }
+		]
+    });
+});
+</script>
+<script>
+	var chart;
+$(function () {
+  var chart = new Highcharts.Chart({
+  chart: {
+                    type: 'column',
+                    renderTo: 'container1'
+                },
+        title: {
+            text: 'Yearly Growth Rate'
+        },
+		  yAxis: {
+            min: 0,
+            title: {
+                text: 'Amount(Lakhs)',
+                align: 'high'
+            },
+            labels: {
+                overflow: 'justify'
+            }
+        },
+        xAxis: {
+            categories: ['(2012-2013)','(2013-2014)','(2014-2015)', '(2015-2016)', '(2016-2017)', '(2017-2018)', '(2018-2019)','(2019-2020)', '(2020-2021)','(2021-2022)']
+        },
+        /*labels: {
+            items: [{
+                html: 'Total fruit consumption',
+                style: {
+                    left: '50px',
+                    top: '18px',
+                    color: (Highcharts.theme && Highcharts.theme.textColor) || 'black'
+                }
+            }]
+        },*/
+		 plotOptions: {
+            series: {
+                cursor: 'pointer',
+                point: {
+                    events: {
+                        click: function () {
+                            location.href = this.options.url+"#container1";
+                        }
+                    }
+                }
+            }
+        },
+        series: [{
+            type: 'column',
+            name: 'Collection',
+		
+            data: [<?php echo $collection1;?>]
+        }, {
+            type: 'column',
+            name: 'linkage',
+            data: [<?php echo $linkage1;?>]
+        }, {
+            type: 'column',
+            name: 'Commision',
+            data: [<?php echo $profit1;?>]
+        },  {
+            type: 'pie',
+            name: 'Total consumption',
+            /*data: [{
+                name: 'collection',
+                y: 13,
+                color: Highcharts.getOptions().colors[0] // Jane's color
+            }, {
+                name: 'linkage',
+                y: 23,
+                color: Highcharts.getOptions().colors[1] // John's color
+            }, {
+                name: 'commission',
+                y: 19,
+                color: Highcharts.getOptions().colors[2] // Joe's color
+            }],
+			
+			
+            center: [100, 80],
+            size: 100,
+            showInLegend: false,*/
+			
+            dataLabels: {
+                enabled: false
+            }
+        }]
+		
+    });
+});
+
+
+</script>
+
+	
